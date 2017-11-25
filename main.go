@@ -28,10 +28,10 @@ func globalTicker() {
 	log.Println("Start globalTicker")
 	for {
 		for {
-			time.Sleep(100 * time.Millisecond)
-			if time.Now().UnixNano() / int64(time.Millisecond) / int64(time.Nanosecond) % 5 == 4 {
+			if time.Now().UnixNano() / int64(100 * time.Millisecond) / int64(time.Nanosecond) % 5 == 3 {
 				break
 			}
+			time.Sleep(100 * time.Millisecond)
 		}
 		roomMutex.Range(func(key, value interface{}) bool {
 			group.Forget(key.(string))
@@ -91,7 +91,7 @@ func getRoomHandler(w http.ResponseWriter, r *http.Request) {
 
 	roomName := vars["room_name"]
 	if _, ok := roomMutex.Load(roomName); !ok {
-		roomMutex.Store(roomName, new(sync.RWMutex))
+		roomMutex.Store(roomName, nil)
 	}
 	path := "/ws/" + url.PathEscape(roomName)
 

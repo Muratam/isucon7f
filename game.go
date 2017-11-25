@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/sync/singleflight"
-	"sync"
 )
 
 var (
@@ -342,6 +341,12 @@ func buyItem(roomName string, itemID int, countBought int, reqTime int64) bool {
 }
 
 func getStatusWithGroup(roomName string) (*GameStatus, error) {
+	for {
+		if time.Now().UnixNano() / int64(100 * time.Millisecond) / int64(time.Nanosecond) % 5 == 4 {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 	v, err, shared := group.Do(roomName, func() (interface{}, error) {
 		return getStatus(roomName)
 	})
@@ -570,12 +575,6 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 	log.Println(ws.RemoteAddr(), "serveGameConn", roomName)
 	defer ws.Close()
 
-	for {
-		time.Sleep(100 * time.Millisecond)
-		if time.Now().UnixNano() / int64(time.Millisecond) / int64(time.Nanosecond) % 5 == 0 {
-			break
-		}
-	}
 	status, err := getStatusWithGroup(roomName)
 	if err != nil {
 		log.Println(err)
@@ -620,10 +619,10 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 			log.Println(req)
 
 			for {
-				time.Sleep(100 * time.Millisecond)
-				if time.Now().UnixNano() / int64(time.Millisecond) / int64(time.Nanosecond) % 5 == 1 {
+				if time.Now().UnixNano() / int64(100 * time.Millisecond) / int64(time.Nanosecond) % 5 == 1 {
 					break
 				}
+				time.Sleep(100 * time.Millisecond)
 			}
 
 			success := false
@@ -639,12 +638,6 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 
 			if success {
 				// GameResponse を返却する前に 反映済みの GameStatus を返す
-				for {
-					time.Sleep(100 * time.Millisecond)
-					if time.Now().UnixNano() / int64(time.Millisecond) / int64(time.Nanosecond) % 5 == 0 {
-						break
-					}
-				}
 				status, err := getStatusWithGroup(roomName)
 				if err != nil {
 					log.Println(err)
@@ -669,12 +662,6 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 				return
 			}
 		case <-ticker.C:
-			for {
-				time.Sleep(100 * time.Millisecond)
-				if time.Now().UnixNano() / int64(time.Millisecond) / int64(time.Nanosecond) % 5 == 0 {
-					break
-				}
-			}
 			status, err := getStatusWithGroup(roomName)
 			if err != nil {
 				log.Println(err)
