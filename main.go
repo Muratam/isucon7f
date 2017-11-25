@@ -13,10 +13,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/jmoiron/sqlx"
+	"github.com/newrelic/go-agent"
 )
 
 var (
 	db *sqlx.DB
+	app newrelic.Application
 )
 
 func initDB() {
@@ -64,6 +66,8 @@ func getInitializeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getRoomHandler(w http.ResponseWriter, r *http.Request) {
+	txn := app.StartTransaction("getRoomHandler", w, r)
+	defer txn.End()
 	vars := mux.Vars(r)
 
 	roomName := vars["room_name"]
@@ -80,6 +84,8 @@ func getRoomHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func wsGameHandler(w http.ResponseWriter, r *http.Request) {
+	txn := app.StartTransaction("wsGameHandler", w, r)
+	defer txn.End()
 	vars := mux.Vars(r)
 
 	roomName := vars["room_name"]
@@ -96,13 +102,21 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	initDB()
 
+	cfg := newrelic.NewConfig("isucon7f", os.Getenv("NEW_RELIC_KEY"))
+	var err error
+	app, err = newrelic.NewApplication(cfg)
+	if err != nil {
+		log.Fatalln("Failed to connect to New Relic:", err)
+	}
+
 	r := mux.NewRouter()
 	r.HandleFunc("/initialize", getInitializeHandler)
 	r.HandleFunc("/room/", getRoomHandler)
 	r.HandleFunc("/room/{room_name}", getRoomHandler)
 	r.HandleFunc("/ws/", wsGameHandler)
 	r.HandleFunc("/ws/{room_name}", wsGameHandler)
-	r.PathPrefix("/").Handler(http.FileServer(http.Dir("../public/")))
+	_, fileserver := newrelic.WrapHandle(app, "/", http.FileServer(http.Dir("../public/")))
+	r.PathPrefix("/").Handler(fileserver)
 
 	log.Fatal(http.ListenAndServe(":5000", handlers.LoggingHandler(os.Stderr, r)))
 }

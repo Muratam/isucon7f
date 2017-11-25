@@ -22,14 +22,14 @@
 [[projects]]
   name = "github.com/gorilla/handlers"
   packages = ["."]
-  revision = "a4043c62cc2329bacda331d33fc908ab11ef0ec3"
-  version = "v1.2.1"
+  revision = "90663712d74cb411cbef281bc1e08c19d1a76145"
+  version = "v1.3.0"
 
 [[projects]]
   name = "github.com/gorilla/mux"
   packages = ["."]
-  revision = "24fca303ac6da784b9e8269f724ddeb0b2eea5e7"
-  version = "v1.5.0"
+  revision = "7f08801859139f86dfafd1c296e2cba9a80d292e"
+  version = "v1.6.0"
 
 [[projects]]
   name = "github.com/gorilla/websocket"
@@ -42,6 +42,12 @@
   name = "github.com/jmoiron/sqlx"
   packages = [".","reflectx"]
   revision = "3379e5993990b1f927fc8db926485e6f6becf2d2"
+
+[[projects]]
+  name = "github.com/newrelic/go-agent"
+  packages = [".","internal","internal/jsonx","internal/logger","internal/sysinfo","internal/utilization"]
+  revision = "462a146a1270954750aac98c5b3e83dec6a9adfd"
+  version = "v1.10.0"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -58,6 +64,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "482aaf3ac2e120969570a0900ebe83c8389808f5efba882a9036602aafff0602"
+  inputs-digest = "fc75484df09dd8a0e55c7901cbb0be057407a028d7c111c4144598873f1d201f"
   solver-name = "gps-cdcl"
   solver-version = 1
