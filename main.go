@@ -40,7 +40,7 @@ func globalTicker() {
 			log.Println("Lock:", rooms[i])
 		}
 		log.Println("sleep 500")
-		time.Sleep(500 * time.Second)
+		time.Sleep(500 * time.Millisecond)
 		log.Println("Attempt to forget")
 		for _, room := range rooms {
 			group.Forget(room)
@@ -51,7 +51,7 @@ func globalTicker() {
 			log.Println("Unlock:", rooms[i])
 		}
 		log.Println("sleep 100")
-		time.Sleep(100 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
