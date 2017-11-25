@@ -124,6 +124,7 @@ func main() {
 	}
 
 	r := mux.NewRouter()
+	AttachProfiler(r)
 	r.HandleFunc("/initialize", getInitializeHandler)
 	r.HandleFunc("/room/", getRoomHandler)
 	r.HandleFunc("/room/{room_name}", getRoomHandler)
@@ -131,8 +132,6 @@ func main() {
 	r.HandleFunc("/ws/{room_name}", wsGameHandler)
 	_, fileserver := newrelic.WrapHandle(app, "/", http.FileServer(http.Dir("../public/")))
 	r.PathPrefix("/").Handler(fileserver)
-
-	AttachProfiler(r)
 
 	log.Fatal(http.ListenAndServe(":5000", handlers.LoggingHandler(os.Stderr, r)))
 }
