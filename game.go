@@ -638,6 +638,8 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 				}
 			}
 
+			log.Println("reqID:", req.RequestID)
+			log.Println("roomName:", roomName)
 			err := ws.WriteJSON(GameResponse{
 				RequestID: req.RequestID,
 				IsSuccess: success,
