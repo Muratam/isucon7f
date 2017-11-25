@@ -623,6 +623,7 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 
 			if success {
 				// GameResponse を返却する前に 反映済みの GameStatus を返す
+				group.Forget(roomName)
 				status, err := getStatusWithGroup(roomName)
 				if err != nil {
 					log.Println(err)
