@@ -137,6 +137,12 @@ func str2big(s string) *big.Int {
 	return x
 }
 
+func str2bigx1000(s string) *big.Int {
+	x := new(big.Int)
+	x.SetString(s + "000", 10)
+	return x
+}
+
 func big2exp(n *big.Int) Exponential {
 	s := n.String()
 
@@ -286,7 +292,7 @@ func buyItem(roomName string, itemID int, countBought int, reqTime int64) bool {
 	}
 
 	for _, a := range addings {
-		totalMilliIsu.Add(totalMilliIsu, new(big.Int).Mul(str2big(a.Isu), big1000))
+		totalMilliIsu.Add(totalMilliIsu, str2bigx1000(a.Isu))
 	}
 
 	var buyings []Buying
@@ -415,7 +421,7 @@ func calcStatus(currentTime int64, mItems map[int]mItem, addings []Adding, buyin
 	for _, a := range addings {
 		// adding は adding.time に isu を増加させる
 		if a.Time <= currentTime {
-			totalMilliIsu.Add(totalMilliIsu, new(big.Int).Mul(str2big(a.Isu), big1000))
+			totalMilliIsu.Add(totalMilliIsu, str2bigx1000(a.Isu))
 		} else {
 			addingAt[a.Time] = a
 		}
@@ -464,7 +470,7 @@ func calcStatus(currentTime int64, mItems map[int]mItem, addings []Adding, buyin
 		// 時刻 t で発生する adding を計算する
 		if a, ok := addingAt[t]; ok {
 			updated = true
-			totalMilliIsu.Add(totalMilliIsu, new(big.Int).Mul(str2big(a.Isu), big1000))
+			totalMilliIsu.Add(totalMilliIsu, str2bigx1000(a.Isu))
 		}
 
 		// 時刻 t で発生する buying を計算する
