@@ -10,6 +10,8 @@ import (
 	"time"
 	"net/http/pprof"
 	"sync"
+	"hash/fnv"
+	"strings"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -23,7 +25,14 @@ var (
 	app newrelic.Application
 	roomMutex sync.Map
 	dur = 10 * time.Millisecond
+	hosts []string
 )
+
+func hash(s string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return h.Sum32()
+}
 
 func globalTicker() {
 	log.Println("Start globalTicker")
@@ -101,7 +110,7 @@ func getRoomHandler(w http.ResponseWriter, r *http.Request) {
 		Host string `json:"host"`
 		Path string `json:"path"`
 	}{
-		Host: "",
+		Host: hosts[hash(roomName) % 3],
 		Path: path,
 	})
 }
@@ -145,6 +154,8 @@ func main() {
 	if err != nil {
 		log.Fatalln("Failed to connect to New Relic:", err)
 	}
+
+	hosts = strings.Split(os.Getenv("CCO_HOSTS"), ",")
 
 	log.Println("Attempt to start globalTicker")
 	go globalTicker()
