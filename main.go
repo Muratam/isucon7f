@@ -22,16 +22,17 @@ var (
 	db *sqlx.DB
 	app newrelic.Application
 	roomMutex sync.Map
+	dur = 10 * time.Millisecond
 )
 
 func globalTicker() {
 	log.Println("Start globalTicker")
 	for {
 		for {
-			if time.Now().UnixNano() / int64(100 * time.Millisecond) / int64(time.Nanosecond) % 5 == 3 {
+			if time.Now().UnixNano() / int64(dur) / int64(time.Nanosecond) % 5 == 3 {
 				break
 			}
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(dur)
 		}
 		roomMutex.Range(func(key, value interface{}) bool {
 			group.Forget(key.(string))

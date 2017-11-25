@@ -342,10 +342,10 @@ func buyItem(roomName string, itemID int, countBought int, reqTime int64) bool {
 
 func getStatusWithGroup(roomName string) (*GameStatus, error) {
 	for {
-		if time.Now().UnixNano() / int64(100 * time.Millisecond) / int64(time.Nanosecond) % 5 == 4 {
+		if time.Now().UnixNano() / int64(dur) / int64(time.Nanosecond) % 5 == 4 {
 			break
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(dur)
 	}
 	v, err, shared := group.Do(roomName, func() (interface{}, error) {
 		return getStatus(roomName)
@@ -619,10 +619,10 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 			log.Println(req)
 
 			for {
-				if time.Now().UnixNano() / int64(100 * time.Millisecond) / int64(time.Nanosecond) % 5 == 1 {
+				if time.Now().UnixNano() / int64(dur) / int64(time.Nanosecond) % 5 == 1 {
 					break
 				}
-				time.Sleep(100 * time.Millisecond)
+				time.Sleep(dur)
 			}
 
 			success := false
