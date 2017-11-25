@@ -342,6 +342,7 @@ func buyItem(roomName string, itemID int, countBought int, reqTime int64) bool {
 
 func getStatusWithGroup(roomName string) (*GameStatus, error) {
 	v, err, shared := group.Do(roomName, func() (interface{}, error) {
+		time.Sleep(100 * time.Millisecond)
 		return getStatus(roomName)
 	})
 	if err != nil {
@@ -624,7 +625,6 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 
 			if success {
 				// GameResponse を返却する前に 反映済みの GameStatus を返す
-				group.Forget(roomName)
 				status, err := getStatusWithGroup(roomName)
 				if err != nil {
 					log.Println(err)
