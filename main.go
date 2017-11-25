@@ -26,10 +26,11 @@ var (
 
 func globalTicker() {
 	for {
-		mutexes := make([]sync.RWMutex, 0, 100)
+		mutexes := make([]*sync.RWMutex, 0, 100)
 		rooms := make([]string, 0, 100)
 		roomMutex.Range(func(key, value interface{}) bool {
-			mutexes = append(mutexes, value.(sync.RWMutex))
+
+			mutexes = append(mutexes, value.(*sync.RWMutex))
 			rooms = append(rooms, key.(string))
 			return true
 		})
@@ -100,7 +101,7 @@ func getRoomHandler(w http.ResponseWriter, r *http.Request) {
 
 	roomName := vars["room_name"]
 	if _, ok := roomMutex.Load(roomName); !ok {
-		roomMutex.Store(roomName, sync.RWMutex{})
+		roomMutex.Store(roomName, new(sync.RWMutex))
 	}
 	path := "/ws/" + url.PathEscape(roomName)
 

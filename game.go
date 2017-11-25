@@ -346,7 +346,7 @@ func getStatusWithGroup(roomName string) (*GameStatus, error) {
 	if !ok {
 		return nil, fmt.Errorf("Failed to load mutex")
 	}
-	mutex := v.(sync.RWMutex)
+	mutex := v.(*sync.RWMutex)
 	mutex.RLock()
 	v, err, shared := group.Do(roomName, func() (interface{}, error) {
 		return getStatus(roomName)
