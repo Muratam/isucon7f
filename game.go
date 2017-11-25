@@ -155,6 +155,27 @@ func big2exp(n *big.Int) Exponential {
 	}
 	return Exponential{t, int64(len(s) - 15)}
 }
+var ten_cache = make([]big.Int, 10000)
+
+func big2expCustom(n *big.Int) Exponential {
+	w := n.Bits()
+	if len(w) <= 1 {
+		Exponential{n.Int64(), 0}
+	}
+	w1 := float64(w[len(w)-1]) // 上のケタ
+	w2 := float64(w[len(w)-2]) // 下のケタ
+	bef := len(w) - 2
+	log10ed := 19.265919722494797 * float64(bef) // log10(2 ** 64) * bef
+	log10ed += math.Log10(18446744073709551616.0*w1 + w2)
+	ketaM15 := int64(log10ed - 14.0)
+	if ten_cache[ketaM15].BitLen() == 0 {
+		ten_cache[ketaM15].Exp(big.NewInt(10), big.NewInt(ketaM15), nil)
+	}
+	ketaInt := ten_cache[ketaM15]
+	dived := big.NewInt(0).Div(n, &ketaInt).Int64()
+	return Exponential(int64(dived), ketaM15)
+}
+
 
 func getCurrentTime() (int64, error) {
 	var currentTime int64
@@ -444,7 +465,7 @@ func calcStatus(currentTime int64, mItems map[int]mItem, addings []Adding, buyin
 	}
 
 	for _, m := range mItems {
-		itemPower0[m.ItemID] = big2exp(itemPower[m.ItemID])
+		itemPower0[m.ItemID] = big2expCustom(itemPower[m.ItemID])
 		itemBuilt0[m.ItemID] = itemBuilt[m.ItemID]
 		price := m.GetPrice(itemBought[m.ItemID] + 1)
 		itemPrice[m.ItemID] = price
@@ -456,8 +477,8 @@ func calcStatus(currentTime int64, mItems map[int]mItem, addings []Adding, buyin
 	schedule := []Schedule{
 		Schedule{
 			Time:       currentTime,
-			MilliIsu:   big2exp(totalMilliIsu),
-			TotalPower: big2exp(totalPower),
+			MilliIsu:   big2expCustom(totalMilliIsu),
+			TotalPower: big2expCustom(totalPower),
 		},
 	}
 
@@ -488,7 +509,7 @@ func calcStatus(currentTime int64, mItems map[int]mItem, addings []Adding, buyin
 				itemBuilding[id] = append(itemBuilding[id], Building{
 					Time:       t,
 					CountBuilt: itemBuilt[id],
-					Power:      big2exp(itemPower[id]),
+					Power:      big2expCustom(itemPower[id]),
 				})
 			}
 		}
@@ -496,8 +517,8 @@ func calcStatus(currentTime int64, mItems map[int]mItem, addings []Adding, buyin
 		if updated {
 			schedule = append(schedule, Schedule{
 				Time:       t,
-				MilliIsu:   big2exp(totalMilliIsu),
-				TotalPower: big2exp(totalPower),
+				MilliIsu:   big2expCustom(totalMilliIsu),
+				TotalPower: big2expCustom(totalPower),
 			})
 		}
 
@@ -523,7 +544,7 @@ func calcStatus(currentTime int64, mItems map[int]mItem, addings []Adding, buyin
 			ItemID:      itemID,
 			CountBought: itemBought[itemID],
 			CountBuilt:  itemBuilt0[itemID],
-			NextPrice:   big2exp(itemPrice[itemID]),
+			NextPrice:   big2expCustom(itemPrice[itemID]),
 			Power:       itemPower0[itemID],
 			Building:    itemBuilding[itemID],
 		})
