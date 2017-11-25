@@ -342,9 +342,16 @@ func buyItem(roomName string, itemID int, countBought int, reqTime int64) bool {
 }
 
 func getStatusWithGroup(roomName string) (*GameStatus, error) {
+	v, ok := roomMutex.Load(roomName)
+	if !ok {
+		return nil, fmt.Errorf("Failed to load mutex")
+	}
+	mutex := v.(sync.RWMutex)
+	mutex.RLock()
 	v, err, shared := group.Do(roomName, func() (interface{}, error) {
 		return getStatus(roomName)
 	})
+	mutex.RUnlock()
 	if err != nil {
 		return nil, err
 	}
@@ -625,15 +632,7 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 
 			if success {
 				// GameResponse を返却する前に 反映済みの GameStatus を返す
-				v, ok := roomMutex.Load(roomName)
-				if !ok {
-					log.Println("Failed to load mutex")
-					return
-				}
-				mutex := v.(sync.RWMutex)
-				mutex.RLock()
 				status, err := getStatusWithGroup(roomName)
-				mutex.RUnlock()
 				if err != nil {
 					log.Println(err)
 					return
