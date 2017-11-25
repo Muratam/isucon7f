@@ -342,16 +342,9 @@ func buyItem(roomName string, itemID int, countBought int, reqTime int64) bool {
 }
 
 func getStatusWithGroup(roomName string) (*GameStatus, error) {
-	v, ok := roomMutex.Load(roomName)
-	if !ok {
-		return nil, fmt.Errorf("Failed to load mutex")
-	}
-	mutex := v.(*sync.RWMutex)
-	mutex.RLock()
 	v, err, shared := group.Do(roomName, func() (interface{}, error) {
 		return getStatus(roomName)
 	})
-	mutex.RUnlock()
 	if err != nil {
 		return nil, err
 	}
@@ -577,6 +570,12 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 	log.Println(ws.RemoteAddr(), "serveGameConn", roomName)
 	defer ws.Close()
 
+	for {
+		time.Sleep(100 * time.Millisecond)
+		if time.Now().UnixNano() / int64(time.Millisecond) / int64(time.Nanosecond) % 5 == 0 {
+			break
+		}
+	}
 	status, err := getStatusWithGroup(roomName)
 	if err != nil {
 		log.Println(err)
@@ -620,6 +619,13 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 		case req := <-chReq:
 			log.Println(req)
 
+			for {
+				time.Sleep(100 * time.Millisecond)
+				if time.Now().UnixNano() / int64(time.Millisecond) / int64(time.Nanosecond) % 5 == 1 {
+					break
+				}
+			}
+
 			success := false
 			switch req.Action {
 			case "addIsu":
@@ -633,6 +639,12 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 
 			if success {
 				// GameResponse を返却する前に 反映済みの GameStatus を返す
+				for {
+					time.Sleep(100 * time.Millisecond)
+					if time.Now().UnixNano() / int64(time.Millisecond) / int64(time.Nanosecond) % 5 == 0 {
+						break
+					}
+				}
 				status, err := getStatusWithGroup(roomName)
 				if err != nil {
 					log.Println(err)
@@ -657,6 +669,12 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 				return
 			}
 		case <-ticker.C:
+			for {
+				time.Sleep(100 * time.Millisecond)
+				if time.Now().UnixNano() / int64(time.Millisecond) / int64(time.Nanosecond) % 5 == 0 {
+					break
+				}
+			}
 			status, err := getStatusWithGroup(roomName)
 			if err != nil {
 				log.Println(err)
