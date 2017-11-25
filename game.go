@@ -606,6 +606,8 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
 
+	responses := make([]GameResponse, 0, 100)
+
 	for {
 		select {
 		case req := <-chReq:
@@ -622,35 +624,31 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 				return
 			}
 
-			if success {
-				// GameResponse を返却する前に 反映済みの GameStatus を返す
-				group.Forget(roomName)
-				status, err := getStatusWithGroup(roomName)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-
-				err = ws.WriteJSON(status)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-			}
-
-			err := ws.WriteJSON(GameResponse{
-				RequestID: req.RequestID,
+			responses = append(responses, GameResponse{
+				RequestID: req.ItemID,
 				IsSuccess: success,
 			})
-			if err != nil {
-				log.Println(err)
-				return
-			}
 		case <-ticker.C:
+			group.Forget(roomName)
 			status, err := getStatusWithGroup(roomName)
 			if err != nil {
 				log.Println(err)
 				return
+			}
+
+			for _, res := range responses {
+				if res.IsSuccess {
+					err := ws.WriteJSON(status)
+					if err != nil {
+						log.Println(err)
+						return
+					}
+				}
+				err := ws.WriteJSON(res)
+				if err != nil {
+					log.Println(err)
+					return
+				}
 			}
 
 			err = ws.WriteJSON(status)
