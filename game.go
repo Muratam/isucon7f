@@ -359,6 +359,7 @@ func getStatusWithGroup(roomName string) (*GameStatus, error) {
 	if !ok {
 		return nil, fmt.Errorf("Failed to assert v")
 	}
+	log.Println("getStatusWithGroup::room:", roomName)
 	log.Println("getStatusWithGroup::shared:", shared)
 	return status, nil
 }

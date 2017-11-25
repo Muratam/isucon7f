@@ -33,15 +33,17 @@ func globalTicker() {
 			rooms = append(rooms, key.(string))
 			return true
 		})
-		for _, mutex := range mutexes {
-			mutex.Lock()
+		for i:=0; i<len(rooms); i++ {
+			mutexes[i].Lock()
+			log.Println("Lock:", rooms[i])
 		}
 		time.Sleep(500 * time.Second)
 		for _, room := range rooms {
 			group.Forget(room)
 		}
-		for _, mutex := range mutexes {
-			mutex.Unlock()
+		for i:=0; i<len(rooms); i++ {
+			mutexes[i].Unlock()
+			log.Println("Unlock:", rooms[i])
 		}
 		time.Sleep(100 * time.Second)
 	}
