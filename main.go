@@ -29,7 +29,7 @@ func globalTicker() {
 	log.Println("Start globalTicker")
 	for {
 		for {
-			if time.Now().UnixNano() / int64(dur) / int64(time.Nanosecond) % 5 == 3 {
+			if time.Now().UnixNano() / int64(dur) / int64(time.Nanosecond) % 3 == 1 {
 				break
 			}
 			time.Sleep(dur)
