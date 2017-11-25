@@ -619,7 +619,8 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 			log.Println(req)
 
 			for {
-				if time.Now().UnixNano() / int64(dur) / int64(time.Nanosecond) % 5 == 1 {
+				x := time.Now().UnixNano() / int64(dur) / int64(time.Nanosecond)
+				if x % 5 == 0 || x % 5 == 1 {
 					break
 				}
 				time.Sleep(dur)
