@@ -23,7 +23,7 @@ var (
 	db *sqlx.DB
 	app newrelic.Application
 	roomMutex sync.Map
-	dur = 70 * time.Millisecond
+	dur = 80 * time.Millisecond
 	hosts []string
 )
 
