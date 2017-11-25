@@ -149,6 +149,7 @@ func AttachProfiler(router *mux.Router) {
 }
 
 func main() {
+	log.Println("Program started")
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	initDB()
 
@@ -159,6 +160,7 @@ func main() {
 		log.Fatalln("Failed to connect to New Relic:", err)
 	}
 
+	log.Println("Attempt to start globalTicker")
 	go globalTicker()
 
 	r := mux.NewRouter()
