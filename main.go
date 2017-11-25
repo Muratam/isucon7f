@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 	"net/http/pprof"
+	"sync"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -20,7 +21,31 @@ import (
 var (
 	db *sqlx.DB
 	app newrelic.Application
+	roomMutex sync.Map
 )
+
+func globalTicker() {
+	for {
+		mutexes := make([]sync.RWMutex, 0, 100)
+		rooms := make([]string, 0, 100)
+		roomMutex.Range(func(key, value interface{}) bool {
+			mutexes = append(mutexes, value.(sync.RWMutex))
+			rooms = append(rooms, key.(string))
+			return true
+		})
+		for _, mutex := range mutexes {
+			mutex.Lock()
+		}
+		time.Sleep(500 * time.Second)
+		for _, room := range rooms {
+			group.Forget(room)
+		}
+		for _, mutex := range mutexes {
+			mutex.Unlock()
+		}
+		time.Sleep(100 * time.Second)
+	}
+}
 
 func initDB() {
 	db_host := os.Getenv("ISU_DB_HOST")
@@ -72,6 +97,9 @@ func getRoomHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	roomName := vars["room_name"]
+	if _, ok := roomMutex.Load(roomName); !ok {
+		roomMutex.Store(roomName, sync.RWMutex{})
+	}
 	path := "/ws/" + url.PathEscape(roomName)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -122,6 +150,8 @@ func main() {
 	if err != nil {
 		log.Fatalln("Failed to connect to New Relic:", err)
 	}
+
+	go globalTicker()
 
 	r := mux.NewRouter()
 	AttachProfiler(r)

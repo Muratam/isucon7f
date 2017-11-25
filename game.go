@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/sync/singleflight"
+	"sync"
 )
 
 var (
@@ -624,8 +625,15 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 
 			if success {
 				// GameResponse を返却する前に 反映済みの GameStatus を返す
-				group.Forget(roomName)
+				v, ok := roomMutex.Load(roomName)
+				if !ok {
+					log.Println("Failed to load mutex")
+					return
+				}
+				mutex := v.(sync.RWMutex)
+				mutex.RLock()
 				status, err := getStatusWithGroup(roomName)
+				mutex.RUnlock()
 				if err != nil {
 					log.Println(err)
 					return
