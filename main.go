@@ -25,27 +25,32 @@ var (
 )
 
 func globalTicker() {
+	log.Println("Start globalTicker")
 	for {
 		mutexes := make([]*sync.RWMutex, 0, 100)
 		rooms := make([]string, 0, 100)
 		roomMutex.Range(func(key, value interface{}) bool {
-
 			mutexes = append(mutexes, value.(*sync.RWMutex))
 			rooms = append(rooms, key.(string))
 			return true
 		})
+		log.Println("Attempt to lock")
 		for i:=0; i<len(rooms); i++ {
 			mutexes[i].Lock()
 			log.Println("Lock:", rooms[i])
 		}
+		log.Println("sleep 500")
 		time.Sleep(500 * time.Second)
+		log.Println("Attempt to forget")
 		for _, room := range rooms {
 			group.Forget(room)
 		}
+		log.Println("Attempt to unlock")
 		for i:=0; i<len(rooms); i++ {
 			mutexes[i].Unlock()
 			log.Println("Unlock:", rooms[i])
 		}
+		log.Println("sleep 100")
 		time.Sleep(100 * time.Second)
 	}
 }
