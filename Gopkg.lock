@@ -61,9 +61,15 @@
   revision = "69483b4bd14f5845b5a1e55bca19e954e827f1d0"
   version = "v1.1.4"
 
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sync"
+  packages = ["singleflight"]
+  revision = "fd80eb99c8f653c847d294a001bdf2a3a6f768f5"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fc75484df09dd8a0e55c7901cbb0be057407a028d7c111c4144598873f1d201f"
+  inputs-digest = "d3368d3f04ed15b208304202997d2459b8d23e70c1203fe42f131fe23e137519"
   solver-name = "gps-cdcl"
   solver-version = 1

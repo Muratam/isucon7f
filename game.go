@@ -11,10 +11,13 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/websocket"
 	"github.com/jmoiron/sqlx"
+	"golang.org/x/sync/singleflight"
 )
 
 var (
 	big1000 = big.NewInt(1000)
+	group singleflight.Group
+
 )
 
 type GameRequest struct {
@@ -337,6 +340,20 @@ func buyItem(roomName string, itemID int, countBought int, reqTime int64) bool {
 	return true
 }
 
+func getStatusWithGroup(roomName string) (*GameStatus, error) {
+	v, err, _ := group.Do(roomName, func() (interface{}, error) {
+		return getStatus(roomName)
+	})
+	if err != nil {
+		return nil, err
+	}
+	status, ok := v.(*GameStatus)
+	if !ok {
+		return nil, fmt.Errorf("Failed to assert v")
+	}
+	return status, nil
+}
+
 func getStatus(roomName string) (*GameStatus, error) {
 	tx, err := db.Beginx()
 	if err != nil {
@@ -550,7 +567,7 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 	log.Println(ws.RemoteAddr(), "serveGameConn", roomName)
 	defer ws.Close()
 
-	status, err := getStatus(roomName)
+	status, err := getStatusWithGroup(roomName)
 	if err != nil {
 		log.Println(err)
 		return
@@ -606,7 +623,7 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 
 			if success {
 				// GameResponse を返却する前に 反映済みの GameStatus を返す
-				status, err := getStatus(roomName)
+				status, err := getStatusWithGroup(roomName)
 				if err != nil {
 					log.Println(err)
 					return
@@ -628,7 +645,7 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 				return
 			}
 		case <-ticker.C:
-			status, err := getStatus(roomName)
+			status, err := getStatusWithGroup(roomName)
 			if err != nil {
 				log.Println(err)
 				return
