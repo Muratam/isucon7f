@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	//"math"
 	"math/big"
 	"strconv"
 	"time"
@@ -145,7 +146,7 @@ func str2bigx1000(s string) *big.Int {
 
 func big2exp(n *big.Int) Exponential {
 	w := n.Bits()
-	if (len(w) == 0) || (len(w) == 1 && w[0] < 10000000000000000)) {
+	if (len(w) == 0) || (len(w) == 1 && w[0] < 10000000000000000) {
 		return Exponential{n.Int64(), 0}
 	}
 	s := n.String()
@@ -155,27 +156,65 @@ func big2exp(n *big.Int) Exponential {
 	}
 	return Exponential{t, int64(len(s) - 15)}
 }
-var ten_cache = make([]big.Int, 10000)
+
+// 15桁以上になりうるので
+func int64ToExponential(significand, exponent int64) Exponential {
+	var addketa int64
+	var divten int64
+	if significand < 1000000000000000 {
+		addketa, divten = 0, 1
+	} else if significand < 10000000000000000 {
+		addketa, divten = 1, 10
+	} else if significand < 100000000000000000 {
+		addketa, divten = 2, 100
+	} else if significand < 1000000000000000000 {
+		addketa, divten = 3, 1000
+	} else {
+		addketa, divten = 4, 10000
+	}
+	return Exponential{significand / divten, exponent + addketa}
+}
+
+func setupTenCache() []big.Int {
+	var tenCache = make([]big.Int, 1) //150000
+	bigTen := big.NewInt(10)
+	tenCache[0].Exp(bigTen, big.NewInt(int64(0)), nil)
+	for i := 1; i < len(tenCache); i++ {
+		tenCache[i].Mul(bigTen, &tenCache[i-1])
+	}
+	return tenCache
+}
+
+var tenCache = setupTenCache()
 
 func big2expCustom(n *big.Int) Exponential {
 	w := n.Bits()
 	if len(w) <= 1 {
-		Exponential{n.Int64(), 0}
+		return int64ToExponential(n.Int64(), 0)
 	}
-	w1 := float64(w[len(w)-1]) // 上のケタ
-	w2 := float64(w[len(w)-2]) // 下のケタ
-	bef := len(w) - 2
-	log10ed := 19.265919722494797 * float64(bef) // log10(2 ** 64) * bef
-	log10ed += math.Log10(18446744073709551616.0*w1 + w2)
-	ketaM15 := int64(log10ed - 14.0)
-	if ten_cache[ketaM15].BitLen() == 0 {
-		ten_cache[ketaM15].Exp(big.NewInt(10), big.NewInt(ketaM15), nil)
-	}
-	ketaInt := ten_cache[ketaM15]
-	dived := big.NewInt(0).Div(n, &ketaInt).Int64()
-	return Exponential(int64(dived), ketaM15)
-}
 
+	//w1 := float64(w[len(w)-1]) // 上のケタ
+	//w2 := float64(w[len(w)-2]) // 下のケタ
+	//bef := len(w) - 2
+	//log10ed := math.Log10(2) * 64 * float64(bef)
+	//log10ed += math.Log10(float64(1<<64)*w1 + w1 + w2)
+	//keta := int64(log10ed - 14.0)
+	//if keta < int64(len(tenCache)) {
+	//ketaInt := &tenCache[keta]
+	//significand := big.NewInt(0).Div(n, ketaInt).Int64()
+	//return int64ToExponential(significand, keta)
+	//if keta > 100000 {
+	//	ketaInt := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(keta), nil)
+	//	significand := big.NewInt(0).Div(n, ketaInt).Int64()
+	//	return int64ToExponential(significand, keta)
+	//} else {
+	iw1 := w[len(w)-1]
+	iw2 := w[len(w)-2]
+	ibef := len(w) - 2
+	keta, res := B2E(uint64(iw1), uint64(iw2), uint64(ibef))
+	return int64ToExponential(int64(res), int64(keta))
+	//}
+}
 
 func getCurrentTime() (int64, error) {
 	var currentTime int64
@@ -611,7 +650,7 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 	for {
 		select {
 		case req := <-chReq:
-			log.Println(req)
+			//log.Println(req)
 
 			success := false
 			switch req.Action {
@@ -656,7 +695,7 @@ func serveGameConn(ws *websocket.Conn, roomName string) {
 
 			err = ws.WriteJSON(status)
 			if err != nil {
-				log.Println(err)
+				//log.Println(err)
 				return
 			}
 		case <-ctx.Done():
