@@ -144,20 +144,19 @@ func str2bigx1000(s string) *big.Int {
 	return x
 }
 
-func big2exp(n *big.Int) Exponential {
-	w := n.Bits()
-	if (len(w) == 0) || (len(w) == 1 && w[0] < 10000000000000000) {
-		return Exponential{n.Int64(), 0}
-	}
-	s := n.String()
-	t, err := strconv.ParseInt(s[:15], 10, 64)
-	if err != nil {
-		log.Panic(err)
-	}
-	return Exponential{t, int64(len(s) - 15)}
+// 桁数が増えても大丈夫なBigintのDiv
+func customBigIntDiv(a *big.Int, b *big.Int) int64 {
+    alen := len(a.Bits())
+    if alen < 4 {
+        return big.NewInt(0).Div(a, b).Int64() 
+    }
+	// WARN: ここらへんの big.NewInt(0)をグローバルに持てればより高速化出来るが並列化出来なくなるので諦め
+	an := big.NewInt(0).SetBits(a.Bits()[alen-3:])
+    bn := big.NewInt(0).SetBits(b.Bits()[alen-3:])
+    return big.NewInt(0).Div(an, bn).Int64() 
 }
 
-// 15桁以上になりうるので
+// int64をそのまま文字列化すると15桁以上になりうるので調整が必要
 func int64ToExponential(significand, exponent int64) Exponential {
 	var addketa int64
 	var divten int64
@@ -176,7 +175,7 @@ func int64ToExponential(significand, exponent int64) Exponential {
 }
 
 func setupTenCache() []big.Int {
-	var tenCache = make([]big.Int, 1) //150000
+	var tenCache = make([]big.Int, 150000) // メモリに応じて適宜調整のこと
 	bigTen := big.NewInt(10)
 	tenCache[0].Exp(bigTen, big.NewInt(int64(0)), nil)
 	for i := 1; i < len(tenCache); i++ {
@@ -185,35 +184,30 @@ func setupTenCache() []big.Int {
 	return tenCache
 }
 
+// WARN: 10^n をキャッシュして使いまわす(初期化に数秒かかる/メモリを喰うので適宜調整のこと)
 var tenCache = setupTenCache()
-
+var ten = big.NewInt(10)
 func big2expCustom(n *big.Int) Exponential {
 	w := n.Bits()
 	if len(w) <= 1 {
 		return int64ToExponential(n.Int64(), 0)
 	}
-
-	//w1 := float64(w[len(w)-1]) // 上のケタ
-	//w2 := float64(w[len(w)-2]) // 下のケタ
-	//bef := len(w) - 2
-	//log10ed := math.Log10(2) * 64 * float64(bef)
-	//log10ed += math.Log10(float64(1<<64)*w1 + w1 + w2)
-	//keta := int64(log10ed - 14.0)
-	//if keta < int64(len(tenCache)) {
-	//ketaInt := &tenCache[keta]
-	//significand := big.NewInt(0).Div(n, ketaInt).Int64()
-	//return int64ToExponential(significand, keta)
-	//if keta > 100000 {
-	//	ketaInt := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(keta), nil)
-	//	significand := big.NewInt(0).Div(n, ketaInt).Int64()
-	//	return int64ToExponential(significand, keta)
-	//} else {
-	iw1 := w[len(w)-1]
-	iw2 := w[len(w)-2]
-	ibef := len(w) - 2
-	keta, res := B2E(uint64(iw1), uint64(iw2), uint64(ibef))
-	return int64ToExponential(int64(res), int64(keta))
-	//}
+	w1 := float64(w[len(w)-1]) // 上のケタ
+	w2 := float64(w[len(w)-2]) // 下のケタ
+	bef := len(w) - 2
+	log10ed := math.Log10(2) * 64 * float64(bef)
+	log10ed += math.Log10(float64(1<<64)*w1 + w1 + w2)
+	keta := int64(log10ed - 14.0)
+	if keta < int64(len(tenCache)) {
+		// WARN: ここらへんの big.NewInt(0)をグローバルに持てればより高速化出来るが並列化出来なくなるので諦め
+		ketaInt := &tenCache[keta]
+		significand := customBigIntDiv(n,ketaInt)
+		return int64ToExponential(significand, keta)
+	} else {
+		ketaInt := big.NewInt(0).Exp(ten, big.NewInt(keta), nil)
+		significand := customBigIntDiv(n,ketaInt)
+		return int64ToExponential(significand, keta)
+	}
 }
 
 func getCurrentTime() (int64, error) {
